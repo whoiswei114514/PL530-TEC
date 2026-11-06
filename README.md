@@ -66,3 +66,9 @@
 ## 许可
 
 项目原创代码、文档和设计内容使用 [MIT 许可证](LICENSE)，许可正文为中文。依赖框架、工具及 PCB 内嵌的第三方器件库、封装、模型仍适用各自许可证；本仓库许可不替代其条款。项目按现状提供，没有可制造性、电气安全或适用性保证。
+
+## 致谢
+
+本项目使用 GPT 和 Gemini 协助开发与调试，感谢 OpenAI ChatGPT 和 Google Gemini 对本项目代码开发、问题排查、调试及文档整理的贡献。
+
+项目使用的 GPT 模型服务由 [AgentRouter](https://agentrouter.org/register?aff=6c4F) 和 [AnyRouter](https://anyrouter.top/register?aff=l3yU) 提供，感谢两个渠道的支持。以上渠道链接含推荐参数。
