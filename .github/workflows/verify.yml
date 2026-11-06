@@ -1,0 +1,43 @@
+name: 固件与主机测试
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 安装构建与测试依赖
+        run: |
+          python -m pip install platformio==6.1.19
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: 执行主机测试
+        run: npm test
+      - name: 执行网页回归测试
+        run: npm run test:web
+      - name: 编译普通与调试固件
+        run: pio run -e pl530_tec -e pl530_tec_debug -j 2
+      - name: 复核发布文件清单
+        run: npm run verify:release
+      - name: 保存验证产物
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: 验证产物
+          path: |
+            test-results/
+            .pio/build/pl530_tec/firmware.bin
+            .pio/build/pl530_tec_debug/firmware.bin
