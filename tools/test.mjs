@@ -32,11 +32,29 @@ for (const suite of [
   { name: "integration", flags: ["-Itests/integration/mocks", "-Iinclude"],
     files: ["tests/integration/api_integration_test.cpp"] },
   { name: "integration-debug", flags: ["-DPL530_ENABLE_UNSAFE_DEBUG=1", "-Itests/integration/mocks", "-Iinclude"],
-    files: ["tests/integration/api_integration_test.cpp"] }
+    files: ["tests/integration/api_integration_test.cpp"] },
+  { name: "precision-controller", flags: ["-DARDUINO=1", "-DESP32=1",
+      "-Ifirmware/precision_pid/tests/native", "-Ifirmware/precision_pid/include"],
+    files: ["firmware/precision_pid/src/thermal_controller.cpp",
+      "firmware/precision_pid/tests/native/controller_safety_test.cpp"] },
+  { name: "precision-sensor", flags: ["-DARDUINO=1", "-DESP32=1",
+      "-Ifirmware/precision_pid/tests/native", "-Ifirmware/precision_pid/include"],
+    files: ["firmware/precision_pid/src/tmp117_sensor.cpp",
+      "firmware/precision_pid/tests/native/sensor_test.cpp"] },
+  { name: "precision-core", flags: ["-Ifirmware/precision_pid/include"],
+    files: ["firmware/precision_pid/tests/precision_pid_test.cpp"] },
+  { name: "precision-storage", flags: ["-Itests/storage", "-Ifirmware/precision_pid/include"],
+    files: ["firmware/precision_pid/src/config_store.cpp",
+      "firmware/precision_pid/tests/pid_storage_test.cpp"] },
+  { name: "precision-integration", flags: ["-Ifirmware/precision_pid/tests/integration/mocks",
+      "-Ifirmware/precision_pid/include"],
+    files: ["firmware/precision_pid/tests/integration/pid_api_test.cpp"] }
 ]) {
   const exe = path.join(build, `${suite.name}${process.platform === "win32" ? ".exe" : ""}`);
   run(compiler, [...flags, ...suite.flags, ...suite.files, "-o", exe], `${suite.name}-build`);
-  const stdout = suite.name.startsWith("integration")
+  const stdout = suite.name === "precision-integration"
+    ? run(process.execPath, ["firmware/precision_pid/tests/integration/verify_json.cjs", exe], suite.name)
+    : suite.name.startsWith("integration")
     ? run(process.execPath, ["tests/integration/verify_json.cjs", exe], suite.name)
     : run(exe, [], suite.name);
   results.push({ suite: suite.name, status: "通过", summary: stdout.trim().split(/\r?\n/).at(-1) });

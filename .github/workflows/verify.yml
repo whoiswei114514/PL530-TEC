@@ -28,8 +28,14 @@ jobs:
         run: npm test
       - name: 执行网页回归测试
         run: npm run test:web
+      - name: 执行精密 PID 网页回归测试
+        run: node firmware/precision_pid/tests/web_ui_test.cjs
+      - name: 检查原始温度日志判定工具
+        run: python firmware/precision_pid/tests/test_analyze_log.py
       - name: 编译普通与调试固件
         run: pio run -e pl530_tec -e pl530_tec_debug -j 2
+      - name: 编译独立精密 PID 固件
+        run: pio run -d firmware/precision_pid -e precision_pid -j 2
       - name: 复核发布文件清单
         run: npm run verify:release
       - name: 保存验证产物
@@ -41,3 +47,5 @@ jobs:
             test-results/
             .pio/build/pl530_tec/firmware.bin
             .pio/build/pl530_tec_debug/firmware.bin
+            firmware/precision_pid/test-results/
+            firmware/precision_pid/.pio/build/precision_pid/firmware.bin

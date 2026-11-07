@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const manifestPath = path.join(root, "docs", "发布清单.json");
 const hash = (file) => crypto.createHash("sha256").update(fs.readFileSync(path.join(root, file))).digest("hex");
-const ignored = new Set(["build", ".build", ".git", "node_modules", ".pio", "test-results"]);
+const ignored = new Set(["build", ".build", ".git", "node_modules", ".pio", "test-results", "__pycache__"]);
 function walk(dir) {
   return fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap((entry) => {
     const file = `${dir}/${entry.name}`;
@@ -17,23 +17,31 @@ function walk(dir) {
 }
 const files = ["README.md", "LICENSE", "CONTRIBUTING.md", "platformio.ini", "package.json",
   "package-lock.json", ".gitignore", ".gitattributes",
-  ...["src", "include", "tests", "tools", "docs", "hardware", ".github"].flatMap(walk)]
+  ...["src", "include", "tests", "tools", "docs", "hardware", ".github", "firmware"].flatMap(walk)]
   .filter((file) => file !== "docs/发布清单.json").sort();
 const inputs = Object.fromEntries(files.map((file) => [file, hash(file)]));
 if (process.argv.includes("--write")) {
   const native = JSON.parse(fs.readFileSync(path.join(root, "test-results/native-summary.json")));
   const browser = JSON.parse(fs.readFileSync(path.join(root, "test-results/web-qa/results.json")));
-  assert(native.results.length === 5 && native.results.every((suite) => suite.status === "通过"));
+  const precisionBrowser = JSON.parse(fs.readFileSync(
+      path.join(root, "firmware/precision_pid/test-results/web-qa/results.json")));
+  assert(native.results.length === 10 && native.results.every((suite) => suite.status === "通过"));
   assert(browser.checks.length === 44 && browser.checks.every((check) => check.passed));
   assert.equal(browser.sha256, hash("include/web_ui.h"));
   assert.equal(browser.testSha256, hash("tests/web_ui_test.cjs"));
-  const firmware = Object.fromEntries(["pl530_tec", "pl530_tec_debug"].map((env) => {
-    const file = `.pio/build/${env}/firmware.bin`;
+  assert(precisionBrowser.checks.length === 46 &&
+      precisionBrowser.checks.every((check) => check.passed));
+  assert.equal(precisionBrowser.sha256, hash("firmware/precision_pid/include/web_ui.h"));
+  assert.equal(precisionBrowser.testSha256, hash("firmware/precision_pid/tests/web_ui_test.cjs"));
+  const firmware = Object.fromEntries(["pl530_tec", "pl530_tec_debug", "precision_pid"].map((env) => {
+    const file = env === "precision_pid"
+        ? `firmware/precision_pid/.pio/build/${env}/firmware.bin`
+        : `.pio/build/${env}/firmware.bin`;
     return [env, { bytes: fs.statSync(path.join(root, file)).size, sha256: hash(file) }];
   }));
   fs.writeFileSync(manifestPath, JSON.stringify({
-    date: "2026-11-07",
-    description: "本次发布文件与本机测试、编译产物的校验记录，不代表实机安全验收。",
+    date: "2026-11-08",
+    description: "发布文件、主机测试与固件编译产物的校验记录。",
     inputs,
     verification: {
       native: native.results.map((suite) => ({
@@ -45,9 +53,10 @@ if (process.argv.includes("--write")) {
             "$1 份响应 JSON 及状态、扫描和方向语义验证通过")
       })),
       browser: { passed: browser.checks.length, total: browser.checks.length },
+      precisionBrowser: { passed: precisionBrowser.checks.length, total: precisionBrowser.checks.length },
       firmware,
       hardwareSha256: hash("hardware/PL530.epro2"),
-      limitations: "模拟测试未覆盖所有 ESP_PLATFORM 实机分支；本次未烧录、未运行 PCB DRC/ ERC、未接通 TEC。"
+      limitations: "精密 PID 版本未经实机验证；10 mK 为整定与实测目标，原版烤机结果不适用于新版。主机模拟未覆盖全部 ESP_PLATFORM 分支。"
     }
   }, null, 2) + "\n");
   console.log("发布清单已生成。");

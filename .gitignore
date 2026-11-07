@@ -8,6 +8,7 @@ test-results/
 *.gcda
 *.gcno
 *.gcov
+__pycache__/
 *.exe
 *.elf
 *.map
