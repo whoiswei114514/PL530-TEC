@@ -2,6 +2,7 @@
   "name": "pl530-tec",
   "version": "1.0.0",
   "private": true,
+  "license": "GPL-3.0-only",
   "description": "PL530 温控固件的主机测试",
   "scripts": {
     "test": "node tools/test.mjs",
