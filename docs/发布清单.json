@@ -1,6 +1,6 @@
 {
   "date": "2026-11-12",
-  "description": "故障修复分支的文件清单；本次完整验证记录等待同提交 GitHub Actions 产物。",
+  "description": "发布文件、主机测试与固件编译产物的校验记录。",
   "inputs": {
     ".gitattributes": "f424219e795cedb9880d9ab965e7bb67046ee6dbf417cbe851bec9d94987470b",
     ".github/workflows/verify.yml": "cb9adb39c3865d1f78cdc70c659d81e07b25a5d4ba2239290c1455548fc63856",
@@ -117,7 +117,109 @@
     "tools/verify_release.mjs": "45a1c0a90812e3df31d72f121b20223a887b8180db89bd27cbed9ec1cbac2ade"
   },
   "verification": {
-    "status": "pending",
-    "reason": "本地后续编译受提交内存不足影响；使用分支 CI 完成验证后再生成最终清单。"
+    "native": [
+      {
+        "suite": "controller",
+        "status": "通过",
+        "summary": "265/265 项测试通过"
+      },
+      {
+        "suite": "controller-hardware",
+        "status": "通过",
+        "summary": "265/265 项测试通过"
+      },
+      {
+        "suite": "sensor",
+        "status": "通过",
+        "summary": "6/6 项传感器测试通过"
+      },
+      {
+        "suite": "storage",
+        "status": "通过",
+        "summary": "Storage 项测试通过: 39829 checks, 22 groups."
+      },
+      {
+        "suite": "integration",
+        "status": "通过",
+        "summary": "659 份响应 JSON 及状态、扫描和方向语义验证通过"
+      },
+      {
+        "suite": "integration-debug",
+        "status": "通过",
+        "summary": "698 份响应 JSON 及状态、扫描和方向语义验证通过"
+      },
+      {
+        "suite": "integration-precision-debug",
+        "status": "通过",
+        "summary": "698 份响应 JSON 及状态、扫描和方向语义验证通过"
+      },
+      {
+        "suite": "precision-controller",
+        "status": "通过",
+        "summary": "241/241 项测试通过"
+      },
+      {
+        "suite": "precision-sensor",
+        "status": "通过",
+        "summary": "6/6 项传感器测试通过"
+      },
+      {
+        "suite": "precision-controller-hardware",
+        "status": "通过",
+        "summary": "241/241 项测试通过"
+      },
+      {
+        "suite": "precision-core",
+        "status": "通过",
+        "summary": "37/37 precision PID 项测试通过"
+      },
+      {
+        "suite": "precision-storage",
+        "status": "通过",
+        "summary": "59 PID storage checks passed"
+      },
+      {
+        "suite": "precision-integration",
+        "status": "通过",
+        "summary": "113 PID response JSON documents parsed"
+      }
+    ],
+    "browser": {
+      "passed": 44,
+      "total": 44
+    },
+    "precisionBrowser": {
+      "passed": 46,
+      "total": 46
+    },
+    "firmware": {
+      "pl530_tec": {
+        "bytes": 846288,
+        "sha256": "490ec2e6e7b8e3a67f3128e9153fe70177bc23f88b0a5886afd3c5fdfea0d011"
+      },
+      "pl530_tec_debug": {
+        "bytes": 854128,
+        "sha256": "c2871b4ed20fdc0b51206c840a2853759d97065525a5622d61a014bec0f094e8"
+      },
+      "precision_pid": {
+        "bytes": 864432,
+        "sha256": "bbaac43b1e57400bc32cced4260b12aaa057aea2f72bfaacb618f94c32dbc6fa"
+      }
+    },
+    "hardwareSha256": "c4d99a14fbd569c00f9264a0dbe6e5327d8abb0b71c723ca9a344cced8b188f9",
+    "limitations": "本次故障修复未经重新上板验证；10 mK 为精密 PID 的整定与实测目标。两版控制器均以 ESP_PLATFORM 编译并执行主机故障注入，GPIO、LEDC、ISR 与定时器仍为模拟外围，不代表真实电气时序验证。",
+    "provenance": {
+      "provider": "GitHub Actions",
+      "runId": 43197734765,
+      "sourceCommit": "d58e2d4e8b8e512782c79cb70a00330da0a014c2",
+      "branch": "fix/fault-audit-20261112",
+      "conclusion": "success",
+      "url": "https://github.com/whoiswei114514/PL530-TEC/actions/runs/43197734765",
+      "note": "本清单使用该提交的 CI 产物生成；后续清单提交未修改其余发布输入。"
+    },
+    "logAnalysis": {
+      "passed": 12,
+      "total": 12
+    }
   }
 }
