@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdio>
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -108,10 +109,20 @@ struct IPAddress {
   String toString() const { return address; }
 };
 struct MockSerial {
+  std::string input;
+  std::string output;
+  int available() const { return static_cast<int>(input.size()); }
+  int read() { const unsigned char c = input.front(); input.erase(0, 1); return c; }
   template <typename... T> void begin(T...) {}
-  template <typename... T> void printf(const char*, T...) {}
-  void println(const char*) {}
+  template <typename... T> void printf(const char* format, T... args) {
+    char buffer[1024];
+    std::snprintf(buffer, sizeof(buffer), format, args...);
+    output += buffer;
+  }
+  void println(const char* text) { output += text; output += '\n'; }
 };
+using portMUX_TYPE = int;
+#define portMUX_INITIALIZER_UNLOCKED 0
 inline MockSerial Serial;
 inline int digitalRead(uint8_t) { return 1; }
 struct MockEsp { unsigned int getPsramSize() const { return 0; } };

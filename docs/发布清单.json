@@ -1,40 +1,41 @@
 {
-  "date": "2026-11-08",
-  "description": "发布文件、主机测试与固件编译产物的校验记录。",
+  "date": "2026-11-12",
+  "description": "故障修复分支的文件清单；本次完整验证记录等待同提交 GitHub Actions 产物。",
   "inputs": {
     ".gitattributes": "f424219e795cedb9880d9ab965e7bb67046ee6dbf417cbe851bec9d94987470b",
     ".github/workflows/verify.yml": "cb9adb39c3865d1f78cdc70c659d81e07b25a5d4ba2239290c1455548fc63856",
     ".gitignore": "60e2f61dd1a3de67edeb0ce1f4b086215ef817550dd970f67e6d3f46f469d20a",
     "CONTRIBUTING.md": "be4cee50151f828a711c6d2512403e54472dade915b4f8e73ee04bc9edca5703",
     "LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
-    "README.md": "fc611c6921f35011b66665f8e830e76bdc7adb4eccc143cfe8b3ef0363d87ee2",
-    "docs/发布验证.md": "9086576f0138986216ed5f400d5e343c5c58f6e9ac189b7c1d65270e99f7fc5f",
+    "README.md": "4eaa08f3a88bd9aa211177c04bd23a3e1a3de6a00aa3d2db6a8c26a8dc54c88b",
+    "docs/发布验证.md": "9d9b0abf104b7c246fbe53de4a5a6bc1a1bd7e4dfe5bbd5071cf0593f564f967",
     "docs/图片/干涉条纹测试实拍.jpg": "181ccabd1ed049773e1cc951a199a9890b636eef9de6b619935d09cc2b9713e2",
     "docs/图片/服务器散热器装配实拍.jpg": "65f3a9ebfbcbf179fc01ee4d28f75150e1d7303c482445595ed06016862d412b",
     "docs/图片/温控样机整体实拍.jpg": "808979ea3f39b8e325c8fe3a3b3766fbb7e6ff9cbdf1a74b9b9f4cf2a523c1d8",
     "docs/图片/网页手机.png": "6c918f0d890ca6953ff7b05d2ed559784fbc519023e79679bd0fc8aa22efd93c",
     "docs/图片/网页桌面.png": "191d800e61081a9ea8cb099fcc84d6de440dece9bc893fac25e9be13d39680e3",
+    "docs/故障复核-2026-11-12.md": "34d5f900da910c1e80bf088530f56ab92820bfb7a695af5e40d6b443ddecfbf5",
     "docs/整理记录.md": "8bc03d106dd6b6bd72ad01721e1300572c5789a785c45617e4cb18ed4e4ca2e4",
-    "docs/温控与接口.md": "ad3a2666f0fe9c9797315492fb7ccbd414ae32ea58becde900ed2d26218747a9",
+    "docs/温控与接口.md": "a7eecbf49fa482df62eeb111bca4c0f770f0d74a8ad5afe9b7090aa55cce2833",
     "docs/硬件与风险.md": "1c502443148f792d06e905b2e30c64312813c0e12010a1b312ac333ce5dd7dbb",
     "docs/编译与烧录.md": "deac365ddb631bd5049cc9e0c33cde6a966dfcece63d674a752dc6f47d7d1525",
-    "docs/调试接口.md": "d8b8e3e3b2e0e0413fd9de819bc0c0905639d6e5da6c594283880588b9c0da96",
-    "firmware/precision_pid/README.md": "f9b770793910ae2dea0653cdfb40b7044074bd962454e7eb0b059a865884bb30",
+    "docs/调试接口.md": "ec7c8c5be6b144b839235f8ab79f283ae0f8df2e2f476e5ac474e0e43fb3deb0",
+    "firmware/precision_pid/README.md": "e63c3881e8217a2a87dd0753d42e0b5b25542e83223d39b3f35a723149156874",
     "firmware/precision_pid/include/config.h": "b80e0ae80d0a8ce44ed7649141df2cd77c4f5898a0d3b145f772279732bdbba4",
     "firmware/precision_pid/include/config_store.h": "5b626d0c90ec11721b03c9185887ead364698139670fdad248339b524629b0b4",
-    "firmware/precision_pid/include/precision_pid.h": "4de721b59b32c27b9d8d268e4dd2d7e98d3074c40576dad117a3e01a9c46afa3",
+    "firmware/precision_pid/include/precision_pid.h": "6c050e2aec7d93a2be1fa8419a676651d7a93f4704806acd379a5e78cbb2f9a3",
     "firmware/precision_pid/include/request_security.h": "e2f8387430c5c327078001028c1666b3131a2f2c84c66408c24fd5ee70525de6",
-    "firmware/precision_pid/include/request_validation.h": "6339cbb25d003f49a7c2ce18b29c7af616c3a1cf164f52c3968faefa78c22af2",
+    "firmware/precision_pid/include/request_validation.h": "f01261929ff928583d6c66ca38b2c86e60f5571774d2050854feb1750b7bc2e3",
     "firmware/precision_pid/include/tec_direction.h": "975787c0045b2c791eecbf486aa003a3f6dd5a05b653e7493cc009bef1c5bf22",
     "firmware/precision_pid/include/thermal_controller.h": "0ce43fdaeba3d77882fba4feaad0babd26a30983f96a691d922b6fe3b341ab0b",
     "firmware/precision_pid/include/tmp117_sensor.h": "6fd940229203d9f382cb146eae197024900a3dba93fef577c44bec576f0e005b",
     "firmware/precision_pid/include/web_ui.h": "4699f2a11a59adc0790bc895326a704cfe69651bc9a97dec964ba4d7f061d4c8",
     "firmware/precision_pid/platformio.ini": "21782efd6eb8a6912f4c1f6fea9023b8a66bcdb7cca2b962ae7b0334aed81a54",
     "firmware/precision_pid/src/config_store.cpp": "88dcf5a683e1bf8afd25a19b86a07bcdd47666e394eda78cfc0f82bbc07ee142",
-    "firmware/precision_pid/src/main.cpp": "2540fbd4452a5b46eed57c10b80abb44bbb43a2a2826f286faf9497c7e211382",
-    "firmware/precision_pid/src/thermal_controller.cpp": "a779002a269fa2d85a361135f45b16935af09c3a93a29fe26d3d2ea0849417c5",
+    "firmware/precision_pid/src/main.cpp": "d9b6226ff8aa37f0f62cff4911eb6b7ffcb5bf5ec698b591f3f656315c1ca78e",
+    "firmware/precision_pid/src/thermal_controller.cpp": "18b974b35f6f0b769e7d42e483274b10c411ecaae310d97f8cb141fbe34f4671",
     "firmware/precision_pid/src/tmp117_sensor.cpp": "d64d7e216b54f4a6a3f7d99fa3dbba2fb5148649b12d3b88b0b5110385496476",
-    "firmware/precision_pid/tests/integration/mocks/Arduino.h": "9a3871d313753ac155a916f2a916d986b69c29a5e5d2ec1dcb14839f2a37a5cd",
+    "firmware/precision_pid/tests/integration/mocks/Arduino.h": "dc03950738dd98972717aadf0939948e3a5e86bc9d73f5c3d3ca570ad66a796b",
     "firmware/precision_pid/tests/integration/mocks/DNSServer.h": "5ff83c6ff1e3684027a22f7380d0e3d464de2e701784a196096eada53bbff53f",
     "firmware/precision_pid/tests/integration/mocks/WebServer.h": "e08762454ef4b6f47b652adbbc0eea7206a837da6d312bf6600ab84243c8be28",
     "firmware/precision_pid/tests/integration/mocks/WiFi.h": "9e8b051fb247b54dbad62bd0b4b569150331102470e801d8c19ba7ca6d4b7e20",
@@ -49,25 +50,25 @@
     "firmware/precision_pid/tests/integration/mocks/web_ui.h": "9cae8cc8b47789f4611095e383136f603a870babedc07dc92da4c2a5b09816c2",
     "firmware/precision_pid/tests/integration/pid_api_test.cpp": "44bcaed07337479596cebcdc4eaaa4f83ee39c76fc9cece484ab212015051eb1",
     "firmware/precision_pid/tests/integration/verify_json.cjs": "7713f300a45d29a95081ce54cd3c18511018b337643cb1521fafea6c93b4b721",
-    "firmware/precision_pid/tests/native/Arduino.h": "e8e21412b94d2bbbe5914ecbcd5497b1af297b838634e6a19355ee8e8519f412",
+    "firmware/precision_pid/tests/native/Arduino.h": "7590cfcc4d1adf363180b1b1be44e140a62f82ce5e08d54f39cf966ced03a353",
     "firmware/precision_pid/tests/native/Wire.h": "9f1104132051220540b3d134853bde2635c90d0065fa6b86cf1060f80dd53cfb",
-    "firmware/precision_pid/tests/native/controller_safety_test.cpp": "334c6b49018e160094c9647484f0d23300236485de3e6db3d8d4a3fe63a2026d",
+    "firmware/precision_pid/tests/native/controller_safety_test.cpp": "a51a9b739082d02e771f8e2b364fedf60566803ea11c96bc44e13c6283d52533",
     "firmware/precision_pid/tests/native/driver/gpio.h": "f311a6f64cc55a5d5de0f86979cf916ae91c01364dc9ccb3bc0f97750f990635",
     "firmware/precision_pid/tests/native/driver/ledc.h": "707b94ed96fe9df5d1652b4ca4ccdf1b3edd96901511637e78a845c9496cf8e0",
     "firmware/precision_pid/tests/native/run.ps1": "d444ac8f4747a82f722dbd74569ad3b90572c56f9fed1d050f5958294637791d",
     "firmware/precision_pid/tests/native/sensor_test.cpp": "34fcdd586eeee2d9646e6d5bcde3438c50e6c130511c9b882f98374c3cdd29f0",
     "firmware/precision_pid/tests/native/soc/gpio_struct.h": "b0983def5d463eacab41675f875336395de382330421d0d2dcbb8d022367f5c0",
     "firmware/precision_pid/tests/pid_storage_test.cpp": "bf913d2e21a502421a0dc7be71296b087f329e71890cf6e14799ecafe84e479a",
-    "firmware/precision_pid/tests/precision_pid_test.cpp": "9a9d68d8e4324b69e168b695184bea65476871d25b65a711269ab504d147f377",
-    "firmware/precision_pid/tests/test_analyze_log.py": "3745454a4e551ebee27494b561198742bef2f732fe6df4a2b1865ab570a8c59f",
+    "firmware/precision_pid/tests/precision_pid_test.cpp": "b48eafbf1c8a2e0e56a8fff4d2118a6b33aa10bb8ea984d382eb6cac105da078",
+    "firmware/precision_pid/tests/test_analyze_log.py": "7684ceeb303952242fd315d7050ca0951a8f3432cd4cb584857d1fa0e3a4c0f4",
     "firmware/precision_pid/tests/web_ui_test.cjs": "28c837c5618cff52b0242aa5c3852e4befb15d35d50b78d5f80918f4043e9cfb",
-    "firmware/precision_pid/tools/analyze_log.py": "8143b9368885441c7bd3b3c338eaa522b85327f2645885fca05165cccb3c511d",
+    "firmware/precision_pid/tools/analyze_log.py": "7e341a463527dd6a30dd676510a6ae469c69048971272c135c3c141c17cf43d6",
     "hardware/PL530.epro2": "c4d99a14fbd569c00f9264a0dbe6e5327d8abb0b71c723ca9a344cced8b188f9",
     "hardware/README.md": "d12fc2a8bc59e97a47e3affc5eee99dac1f0e0107414572bca80dd705eb1e4cb",
     "include/config.h": "d880a33240c1c86895371f4ec91fb7aae6548daac85bc431eb1b0c3250d855ab",
     "include/config_store.h": "cf3e64e4e4bf68c256c982fe00a06bf4f2bb4f480795da82d5cc4332ef6677e5",
     "include/request_security.h": "e2f8387430c5c327078001028c1666b3131a2f2c84c66408c24fd5ee70525de6",
-    "include/request_validation.h": "6339cbb25d003f49a7c2ce18b29c7af616c3a1cf164f52c3968faefa78c22af2",
+    "include/request_validation.h": "f01261929ff928583d6c66ca38b2c86e60f5571774d2050854feb1750b7bc2e3",
     "include/tec_direction.h": "975787c0045b2c791eecbf486aa003a3f6dd5a05b653e7493cc009bef1c5bf22",
     "include/thermal_controller.h": "e79ac09cf57d21e29282b2f130f06a755828014a7a2a27977715c860f25e4c4f",
     "include/tmp117_sensor.h": "6fd940229203d9f382cb146eae197024900a3dba93fef577c44bec576f0e005b",
@@ -76,12 +77,13 @@
     "package.json": "1689c80725e5a6135ede042c2e4199c729a13ee98f3c452cff4d7a41a1846a08",
     "platformio.ini": "82b12d5f5c0dc53766ac6b7c090912a03a883557d572b105084c999a7c0df461",
     "src/config_store.cpp": "42006ff4ccf42e9dc0d725714d6fc48fd94effc9100c745f07a4536fd7835f77",
-    "src/main.cpp": "6be64f766c12022549c24524f38e3d4ba34c01829b4e489208d5e5d7eb0c5c67",
-    "src/thermal_controller.cpp": "14674e131a204b8c4238c429a9c92a3d94f88e2f4da397455a5dbb97934a9880",
+    "src/main.cpp": "bf60c140f23e2957d93000c0de91e4263b633fb061d0524ebbc3afa653691d95",
+    "src/thermal_controller.cpp": "12d3fb49085008f34b5d1a5ac1c2f41ef47ac84091b933dde36389bb3dd381e7",
     "src/tmp117_sensor.cpp": "9be80fbb8e3b88820f3027b81d4a3752678ce93a3758293156707438fbac3d03",
     "tests/integration/.gitignore": "99921edb369e12a35a87d768ae481f8c944573626abd4b8f3a1fe78846f30ba7",
-    "tests/integration/api_integration_test.cpp": "8efac16064ce33959035d76a695e8f6a442ed7d31a58ba6509cb9e1fdeffa5f4",
-    "tests/integration/mocks/Arduino.h": "9a3871d313753ac155a916f2a916d986b69c29a5e5d2ec1dcb14839f2a37a5cd",
+    "tests/integration/api_integration_test.cpp": "facec5c819039c1608ab3119d61b201e1a731834bbf95412579ea5949fe15c1f",
+    "tests/integration/debug_regressions.h": "99633b0f64b5e9519766f3a338d31f0a6d4145ea694ac6d0cad315e03c571da5",
+    "tests/integration/mocks/Arduino.h": "dc03950738dd98972717aadf0939948e3a5e86bc9d73f5c3d3ca570ad66a796b",
     "tests/integration/mocks/DNSServer.h": "5ff83c6ff1e3684027a22f7380d0e3d464de2e701784a196096eada53bbff53f",
     "tests/integration/mocks/WebServer.h": "e08762454ef4b6f47b652adbbc0eea7206a837da6d312bf6600ab84243c8be28",
     "tests/integration/mocks/WiFi.h": "9e8b051fb247b54dbad62bd0b4b569150331102470e801d8c19ba7ca6d4b7e20",
@@ -96,11 +98,12 @@
     "tests/integration/mocks/web_ui.h": "9cae8cc8b47789f4611095e383136f603a870babedc07dc92da4c2a5b09816c2",
     "tests/integration/run.ps1": "b3fd5e338b15bcc937797170aa829929f7787c8b2b4925f92094860012349c7f",
     "tests/integration/verify_json.cjs": "06f684320832f3c4ea1e0381605ef8da03c8091901779d4b0782ba92c1f7493f",
-    "tests/native/Arduino.h": "e8e21412b94d2bbbe5914ecbcd5497b1af297b838634e6a19355ee8e8519f412",
+    "tests/native/Arduino.h": "7590cfcc4d1adf363180b1b1be44e140a62f82ce5e08d54f39cf966ced03a353",
     "tests/native/Wire.h": "9f1104132051220540b3d134853bde2635c90d0065fa6b86cf1060f80dd53cfb",
-    "tests/native/controller_safety_test.cpp": "a05b6c17d36516f3eca0dc108a9f30778d00c1ad8899b15027f681b582559ebd",
+    "tests/native/controller_safety_test.cpp": "e73cd5201dc0b2ee1d75a154151d975b13ada58f0561340354414a27ccf72266",
     "tests/native/driver/gpio.h": "f311a6f64cc55a5d5de0f86979cf916ae91c01364dc9ccb3bc0f97750f990635",
     "tests/native/driver/ledc.h": "707b94ed96fe9df5d1652b4ca4ccdf1b3edd96901511637e78a845c9496cf8e0",
+    "tests/native/fault_regressions.h": "c1e52205940d3b5ca1e1e2cdec3f4f364deb78bf1561a767a5b51a48eff928be",
     "tests/native/run.ps1": "38eb96f1a3c3d5945645073451d6b27e5930d50ae3740b6b3b3177556867fcac",
     "tests/native/sensor_test.cpp": "aa70f2372c4c1cd35d4d3a4b88060117536cdb8bdcb45255c840c39a03d5695d",
     "tests/native/soc/gpio_struct.h": "b0983def5d463eacab41675f875336395de382330421d0d2dcbb8d022367f5c0",
@@ -110,85 +113,11 @@
     "tests/storage/nvs.h": "7dbc2c63780dbec966940a263c6c2cc0be93f277696fb49be1e3e30ca3021ab2",
     "tests/storage/run.ps1": "d3fca1b02b5058d79f602e364b10c1ca511fa0d093e1cc87434231f47f75e637",
     "tests/web_ui_test.cjs": "a892bb98eba114e4cae79eac530e9fb8b0d697b8fae9b85432a9e0a2c76a7bae",
-    "tools/test.mjs": "b3c3630afdba212d1975356715bc7ce23a17627a35df7ce0d62eb05b2a83d7f7",
-    "tools/verify_release.mjs": "1e226a903f8d40d20343124bc0e10393b993fd9d36f5788aa524caa1119a3511"
+    "tools/test.mjs": "06bc1060028c425e34f0ecda9d0494201514007dfe414e5400dcb773bf3236ad",
+    "tools/verify_release.mjs": "45a1c0a90812e3df31d72f121b20223a887b8180db89bd27cbed9ec1cbac2ade"
   },
   "verification": {
-    "native": [
-      {
-        "suite": "controller",
-        "status": "通过",
-        "summary": "260/260 项测试通过"
-      },
-      {
-        "suite": "sensor",
-        "status": "通过",
-        "summary": "6/6 项传感器测试通过"
-      },
-      {
-        "suite": "storage",
-        "status": "通过",
-        "summary": "Storage 项测试通过: 39829 checks, 22 groups."
-      },
-      {
-        "suite": "integration",
-        "status": "通过",
-        "summary": "659 份响应 JSON 及状态、扫描和方向语义验证通过"
-      },
-      {
-        "suite": "integration-debug",
-        "status": "通过",
-        "summary": "666 份响应 JSON 及状态、扫描和方向语义验证通过"
-      },
-      {
-        "suite": "precision-controller",
-        "status": "通过",
-        "summary": "236/236 项测试通过"
-      },
-      {
-        "suite": "precision-sensor",
-        "status": "通过",
-        "summary": "6/6 项传感器测试通过"
-      },
-      {
-        "suite": "precision-core",
-        "status": "通过",
-        "summary": "36/36 precision PID 项测试通过"
-      },
-      {
-        "suite": "precision-storage",
-        "status": "通过",
-        "summary": "59 PID storage checks passed"
-      },
-      {
-        "suite": "precision-integration",
-        "status": "通过",
-        "summary": "113 PID response JSON documents parsed"
-      }
-    ],
-    "browser": {
-      "passed": 44,
-      "total": 44
-    },
-    "precisionBrowser": {
-      "passed": 46,
-      "total": 46
-    },
-    "firmware": {
-      "pl530_tec": {
-        "bytes": 846864,
-        "sha256": "e05f08564edb97c3f109c648dcbea1b92f5fbdce3b560be7d6b48e729e1c967b"
-      },
-      "pl530_tec_debug": {
-        "bytes": 853952,
-        "sha256": "2306637c80f269e5dd82329a3ad44d296d1c827866822ff518c0a2c9a6d90775"
-      },
-      "precision_pid": {
-        "bytes": 865120,
-        "sha256": "88448b8f27801c8f75eaaed8e20f3d6af526cce2619bac0d7a8b12851b243f55"
-      }
-    },
-    "hardwareSha256": "c4d99a14fbd569c00f9264a0dbe6e5327d8abb0b71c723ca9a344cced8b188f9",
-    "limitations": "精密 PID 版本未经实机验证；10 mK 为整定与实测目标，原版烤机结果不适用于新版。主机模拟未覆盖全部 ESP_PLATFORM 分支。"
+    "status": "pending",
+    "reason": "本地后续编译受提交内存不足影响；使用分支 CI 完成验证后再生成最终清单。"
   }
 }

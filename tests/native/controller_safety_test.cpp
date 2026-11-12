@@ -13,6 +13,11 @@
 #include "thermal_controller.h"
 
 namespace {
+#if defined(ESP_PLATFORM)
+constexpr uint32_t CALIBRATION_PWM_COUNT = TEC_PWM_MAX_COUNT * TEC_CAL_OUTPUT_LIMIT_PERCENT / 100;
+#else
+constexpr uint32_t CALIBRATION_PWM_COUNT = TEC_PWM_MAX_COUNT;
+#endif
 struct Event {
   std::string kind;
   uint32_t index;
@@ -41,6 +46,7 @@ std::function<void()> afterSleepCut;
 std::function<void()> sleepDelayHook;
 std::function<void()> wakeDelayHook;
 std::function<void(uint8_t, uint32_t)> pwmWriteHook;
+std::function<void()> criticalExitHook;
 
 void setTimeMs(uint32_t now) { fakeMicros = uint64_t{now} * 1000; }
 
@@ -107,6 +113,7 @@ void prepare(ThermalController& controller, bool startPwm = true, bool confirmed
   sleepDelayHook = nullptr;
   wakeDelayHook = nullptr;
   pwmWriteHook = nullptr;
+  criticalExitHook = nullptr;
   controller.begin();
   if (confirmed) {
     require(controller.setTecDirection(TecDirection::Normal), "legacy cases use a confirmed mapping");
@@ -1204,10 +1211,10 @@ void completeBaseline(TestController& controller, float temperature) {
   require(status.active && status.phase == (forward ? CalibrationPhase::Forward : CalibrationPhase::Reverse),
           "stable baseline must enter the matching powered phase");
   require(status.rawDutyPercent == (forward ? 100 : -100) &&
-              duties[forward ? LEDC_CHANNEL_IN1 : LEDC_CHANNEL_IN2] == TEC_PWM_MAX_COUNT &&
+              duties[forward ? LEDC_CHANNEL_IN1 : LEDC_CHANNEL_IN2] == CALIBRATION_PWM_COUNT &&
               duties[forward ? LEDC_CHANNEL_IN2 : LEDC_CHANNEL_IN1] == 0 &&
               pinValues[PIN_DRV_SLEEP] == HIGH,
-          "pulse must drive exactly one physical input at full duty");
+          "pulse must drive exactly one input at the build's calibration limit");
   require(controller.status().signedDutyPercent == 0 &&
               controller.status().heatingDutyPercent == 0 && controller.status().coolingDutyPercent == 0,
           "unconfirmed physical output must not claim to be thermal heating or cooling");
@@ -1418,7 +1425,7 @@ void calibrationSeedsEligibleSampleBeforeFirstPulse() {
   const auto status = controller.directionCalibrationStatus();
   require(status.active && status.phase == CalibrationPhase::Forward &&
               status.rawDutyPercent == 100.0f &&
-              duties[LEDC_CHANNEL_IN1] == TEC_PWM_MAX_COUNT &&
+              duties[LEDC_CHANNEL_IN1] == CALIBRATION_PWM_COUNT &&
               duties[LEDC_CHANNEL_IN2] == 0 &&
               pinValues[PIN_DRV_SLEEP] == HIGH,
           "eligible baseline sample must prevent jitter from suppressing the first physical pulse");
@@ -1648,6 +1655,7 @@ void calibrationDriftCorrectionRejectsFalseEvidence() {
           "raw threshold alone cannot qualify a response dominated by baseline drift");
   assertOff(controller);
 }
+#include "fault_regressions.h"
 }  // namespace
 
 GpioRegisters GPIO;
@@ -1670,6 +1678,7 @@ void portEXIT_CRITICAL(portMUX_TYPE* mux) {
   --*mux;
   --criticalDepth;
   deliverFaultInterrupt();
+  if (criticalDepth == 0) runOnce(criticalExitHook);
 }
 void portENTER_CRITICAL_ISR(portMUX_TYPE* mux) { portENTER_CRITICAL(mux); }
 void portEXIT_CRITICAL_ISR(portMUX_TYPE* mux) { portEXIT_CRITICAL(mux); }
@@ -1731,6 +1740,7 @@ void attachInterruptArg(uint8_t pin, void (*callback)(void*), void* argument, in
   gpio_set_intr_type(pin, GPIO_INTR_NEGEDGE);
   gpio_isr_handler_add(pin, callback, argument);
 }
+void esp_rom_delay_us(uint32_t duration) { delayMicroseconds(duration); }
 void delayMicroseconds(uint32_t duration) {
   fakeMicros += duration;
   events.push_back({"delay", 0, duration});
@@ -1762,6 +1772,11 @@ void ledcWrite(uint8_t channel, uint32_t duty) {
 
 int main() {
   std::vector<std::pair<std::string, std::function<void()>>> tests = {
+      {"watchdog_without_peripheral_calls", watchdogWithoutPeripheralCalls},
+      {"watchdog_cut_before_unlock", watchdogCutBeforeUnlock},
+      {"first_control_pwm_fault", [] { firstPoweredWriteFault(false); }},
+      {"first_calibration_pwm_fault", [] { firstPoweredWriteFault(true); }},
+      {"queued_powered_fault_survives_poll", queuedPoweredFaultSurvivesPoll},
       {"startup_off", startupOff},
       {"invalid_sensor_stops_output", invalidSensorStopsOutput},
       {"wake_failure_latches", wakeFailureLatches},

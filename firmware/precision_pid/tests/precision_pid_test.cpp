@@ -64,6 +64,21 @@ void model(double tau, double gain, double load, double delaySeconds) {
 
 int main() {
   std::vector<std::pair<std::string, std::function<void()>>> tests = {
+    {"unfiltered_window_real_poll_cadence", [] {
+      for (uint32_t interval : {267u, 300u, 399u}) {
+        for (uint32_t start : {0u, UINT32_MAX - 1000u}) {
+          TemperatureStability window;
+          uint32_t elapsed = 0;
+          for (; elapsed <= 180000; elapsed += interval)
+            window.add(25.0078125, 25, start + elapsed);
+          require(window.result().samples < 500, "exercise real software-I2C cadence");
+          require(window.result().within10Mk,
+                  "a continuous 120-second raw window must not require exactly 5 Hz polling");
+          window.add(25, 25, start + elapsed + 1000);
+          require(!window.result().ready, "freshness gap must still reset slower sampling evidence");
+        }
+      }
+    }},
     {"above_target_plateau", [] { plateau(true); }},
     {"below_target_plateau", [] { plateau(false); }},
     {"no_derivative_setpoint_kick", [] {

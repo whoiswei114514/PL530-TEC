@@ -9,6 +9,9 @@ from pathlib import Path
 
 
 def analyze(lines, settle_seconds=600, duration_seconds=1800):
+    if (not math.isfinite(settle_seconds) or not math.isfinite(duration_seconds)
+            or settle_seconds < 0 or duration_seconds < 120):
+        return {"passed": False, "issues": ["invalid measurement interval"]}
     rows = []
     issues = []
     previous_ms = None
@@ -24,6 +27,12 @@ def analyze(lines, settle_seconds=600, duration_seconds=1800):
             if not 0 <= ms <= 0xFFFFFFFF:
                 raise ValueError("timestamp outside uint32 range")
             raw, filtered, target, duty, p, i, d = map(float, values[2:9])
+            if not all(math.isfinite(value) for value in (raw, filtered, target, duty, p, i, d)):
+                raise ValueError("nonfinite temperature or control value")
+            if not -55 <= raw <= 150 or not -55 <= filtered <= 150:
+                raise ValueError("temperature outside TMP117 range")
+            if not 10.2 <= target <= 54.8 or abs(duty) > 100:
+                raise ValueError("target or output outside controller range")
             if previous_ms is not None:
                 gap = (ms - previous_ms) & 0xFFFFFFFF
                 if gap == 0 or gap > 0x7FFFFFFF:
@@ -89,7 +98,9 @@ def main():
     parser.add_argument("--settle-seconds", type=float, default=600)
     parser.add_argument("--duration-seconds", type=float, default=1800)
     arguments = parser.parse_args()
-    if arguments.settle_seconds < 0 or arguments.duration_seconds < 120:
+    if (not math.isfinite(arguments.settle_seconds)
+            or not math.isfinite(arguments.duration_seconds)
+            or arguments.settle_seconds < 0 or arguments.duration_seconds < 120):
         parser.error("settle must be nonnegative and duration must be at least 120 seconds")
     with arguments.log.open(encoding="utf-8", errors="replace") as source:
         result = analyze(source, arguments.settle_seconds, arguments.duration_seconds)

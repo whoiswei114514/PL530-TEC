@@ -25,7 +25,10 @@ if (process.argv.includes("--write")) {
   const browser = JSON.parse(fs.readFileSync(path.join(root, "test-results/web-qa/results.json")));
   const precisionBrowser = JSON.parse(fs.readFileSync(
       path.join(root, "firmware/precision_pid/test-results/web-qa/results.json")));
-  assert(native.results.length === 10 && native.results.every((suite) => suite.status === "通过"));
+  assert(native.results.length === 13 && native.results.every((suite) => suite.status === "通过"));
+  assert(native.results.some((suite) => suite.suite === "controller-hardware"));
+  assert(native.results.some((suite) => suite.suite === "precision-controller-hardware"));
+  assert(native.results.some((suite) => suite.suite === "integration-precision-debug"));
   assert(browser.checks.length === 44 && browser.checks.every((check) => check.passed));
   assert.equal(browser.sha256, hash("include/web_ui.h"));
   assert.equal(browser.testSha256, hash("tests/web_ui_test.cjs"));
@@ -40,7 +43,7 @@ if (process.argv.includes("--write")) {
     return [env, { bytes: fs.statSync(path.join(root, file)).size, sha256: hash(file) }];
   }));
   fs.writeFileSync(manifestPath, JSON.stringify({
-    date: "2026-11-08",
+    date: new Date().toISOString().slice(0, 10),
     description: "发布文件、主机测试与固件编译产物的校验记录。",
     inputs,
     verification: {
@@ -56,7 +59,7 @@ if (process.argv.includes("--write")) {
       precisionBrowser: { passed: precisionBrowser.checks.length, total: precisionBrowser.checks.length },
       firmware,
       hardwareSha256: hash("hardware/PL530.epro2"),
-      limitations: "精密 PID 版本未经实机验证；10 mK 为整定与实测目标，原版烤机结果不适用于新版。主机模拟未覆盖全部 ESP_PLATFORM 分支。"
+      limitations: "本次故障修复未经重新上板验证；10 mK 为精密 PID 的整定与实测目标。两版控制器均以 ESP_PLATFORM 编译并执行主机故障注入，GPIO、LEDC、ISR 与定时器仍为模拟外围，不代表真实电气时序验证。"
     }
   }, null, 2) + "\n");
   console.log("发布清单已生成。");

@@ -54,6 +54,7 @@ int digitalRead(uint8_t pin);
 void pinMode(uint8_t pin, uint8_t mode);
 void attachInterruptArg(uint8_t pin, void (*callback)(void*), void* argument, int mode);
 void delayMicroseconds(uint32_t duration);
+void esp_rom_delay_us(uint32_t duration);
 void delay(uint32_t duration);
 uint32_t millis();
 uint32_t micros();

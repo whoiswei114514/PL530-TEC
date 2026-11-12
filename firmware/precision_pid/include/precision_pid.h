@@ -166,7 +166,10 @@ class TemperatureStability {
     result.maximumErrorMk = maxError * 1000;
     result.durationMs = lastMs_ - samples_[start_].ms;
     result.samples = count_;
-    result.ready = result.durationMs >= WINDOW_MS - 400 && count_ >= 500;
+    // add() already resets evidence after a freshness gap. Software I2C
+    // acquisition time is added to the polling interval, so a continuous
+    // 120-second window can legitimately contain fewer than 500 samples.
+    result.ready = result.durationMs >= WINDOW_MS - 400;
     result.within10Mk = result.ready && result.maximumErrorMk <= 10.0 &&
         result.peakToPeakMk <= 20.0;
     return result;

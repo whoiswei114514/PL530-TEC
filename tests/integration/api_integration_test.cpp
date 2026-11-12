@@ -3,7 +3,11 @@
 #include <utility>
 
 // Compile the production handlers, setup, loop, and validation helper unchanged.
+#if defined(PL530_TEST_PRECISION_FIRMWARE)
+#include "../../firmware/precision_pid/src/main.cpp"
+#else
 #include "../../src/main.cpp"
+#endif
 
 namespace {
 void require(bool condition, const char* message) {
@@ -13,6 +17,7 @@ ControllerStatus& mutableStatus() {
   return const_cast<ControllerStatus&>(controller.status());
 }
 void reset() {
+  Serial = MockSerial{};
   MockString::reset();
   MockSta::reset();
   mockNow = 1000;
@@ -352,15 +357,18 @@ void scanResultBound() {
 }
 void routesAndNotFound() {
   setupRoutes();
-  require(server.routes.size() == (PL530_ENABLE_UNSAFE_DEBUG ? 13u : 9u) && server.collectedHeaders ==
-              std::vector<std::string>{"X-PL530-Request", "Host", "Origin"},
-          "route/header registration changed");
   const std::vector<std::pair<std::string, HTTPMethod>> expected = {
       {"/", HTTP_GET}, {"/api/status", HTTP_GET}, {"/api/settings", HTTP_POST},
+#if defined(PL530_TEST_PRECISION_FIRMWARE)
+      {"/api/pid", HTTP_GET}, {"/api/pid", HTTP_POST},
+#endif
       {"/api/wifi/scan", HTTP_GET}, {"/api/wifi/connect", HTTP_POST},
       {"/api/wifi/disconnect", HTTP_POST}, {"/api/control/reset-fault", HTTP_POST},
       {"/api/control/stop", HTTP_POST},
       {"/api/control/detect-direction", HTTP_POST}};
+  require(server.routes.size() == expected.size() + (PL530_ENABLE_UNSAFE_DEBUG ? 4u : 0u) &&
+              server.collectedHeaders == std::vector<std::string>{"X-PL530-Request", "Host", "Origin"},
+          "route/header registration changed");
   for (size_t i = 0; i < expected.size(); ++i) {
     require(server.routes[i].path == expected[i].first &&
                 server.routes[i].method == expected[i].second, "route path/method mismatch");
@@ -371,8 +379,8 @@ void routesAndNotFound() {
           "captive portal redirect changed");
   server.resetRequest(); server.setHost("192.168.1.1");
   server.routes[1].handler(); response(200, "public-status");
-  server.routes[7].handler(); response(403, "routed-stop-header");
-  server.routes[8].handler(); response(403, "routed-direction-header");
+  server.dispatch("/api/control/stop", HTTP_POST); response(403, "routed-stop-header");
+  server.dispatch("/api/control/detect-direction", HTTP_POST); response(403, "routed-direction-header");
 }
 void startupFailClosed() {
   configStore.storedSettings.enabled = true;
@@ -1392,6 +1400,9 @@ void debugRouteIsolationAndValidation() {
   server.dispatch("/api/control/set-direction", HTTP_POST);
   response(503, "debug-direction-save-failure");
 }
+#if PL530_ENABLE_UNSAFE_DEBUG && defined(ARDUINO) && defined(ESP32)
+#include "debug_regressions.h"
+#endif
 }
 
 int main() {
@@ -1464,6 +1475,11 @@ int main() {
       {"enabled_argument_copy_failure_rejects", enabledArgumentAllocationFailureRejects},
       {"calibration_loop_services_stop", calibrationLoopServicesStopRequest},
       {"debug_routes_isolation_validation", debugRouteIsolationAndValidation},
+#if PL530_ENABLE_UNSAFE_DEBUG && defined(ARDUINO) && defined(ESP32)
+      {"debug_arguments_reject_before_mutation", debugArgumentsRejectBeforeMutation},
+      {"serial_direction_checks_save_and_state", serialDirectionChecksSaveAndState},
+      {"serial_calibration_invalidates_and_saves", serialCalibrationInvalidatesAndSaves},
+#endif
   };
   int failed = 0;
   for (const auto& test : tests) {

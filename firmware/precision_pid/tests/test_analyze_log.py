@@ -15,6 +15,29 @@ def logs(raw=25.0078125, duration_ms=1800000, start_ms=0, state="NormalControl")
 
 
 class LogAcceptance(unittest.TestCase):
+    def test_nonfinite_control_columns_cannot_pass(self):
+        for column in (3, 5, 6, 7, 8):
+            for invalid in ("nan", "inf", "-inf"):
+                with self.subTest(column=column, invalid=invalid):
+                    data = logs(duration_ms=120000)
+                    row = data[100].strip().split(",")
+                    row[column] = invalid
+                    data[100] = ",".join(row) + "\n"
+                    self.assertFalse(module.analyze(data, 0, 120)["passed"])
+
+    def test_invalid_analysis_intervals(self):
+        for settle, duration in ((-1, 120), (0, 0), (0, 119),
+                                 (float("nan"), 120), (0, float("inf"))):
+            with self.subTest(settle=settle, duration=duration):
+                result = module.analyze(logs(duration_ms=120000), settle, duration)
+                self.assertFalse(result["passed"])
+                self.assertIn("invalid measurement interval", result["issues"])
+
+    def test_impossible_output_cannot_pass(self):
+        data = logs(duration_ms=120000)
+        data[100] = data[100].replace(",25,25,-10,", ",25,25,100.1,")
+        self.assertFalse(module.analyze(data, 0, 120)["passed"])
+
     def test_full_duration_raw_temperature(self):
         result = module.analyze(logs(), 0, 1800)
         self.assertTrue(result["passed"])

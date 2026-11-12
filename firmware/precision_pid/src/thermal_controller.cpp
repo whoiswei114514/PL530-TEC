@@ -628,7 +628,9 @@ void ThermalController::writeRawHBridge(float rawDutyPercent) {
     portENTER_CRITICAL(&m_guardMux);
     GPIO.status_w1tc = uint32_t{1} << PIN_DRV_FAULT;
     m_driverFaultPending = false;
-    m_monitorDriverFault = false;  // Keep false until PWM is applied and 2ms activation blanking passes
+    // Blanking is over while both PWM channels are still zero. Every edge
+    // after this handoff, including the first powered cycle, must latch.
+    m_monitorDriverFault = true;
     portEXIT_CRITICAL(&m_guardMux);
     pollDriverFault(false);
     if (faultLatched() || !outputDeadlineSafe()) {
@@ -676,28 +678,6 @@ void ThermalController::writeRawHBridge(float rawDutyPercent) {
     ledcWrite(LEDC_CHANNEL_IN1, 0);
     ledcWrite(LEDC_CHANNEL_IN2, 0);
   }
-  if (calibrationWrite) {
-    if (!m_monitorDriverFault) {
-      // Blank the ~1ms bridge activation transient of DRV8701 during calibration
-      delayMicroseconds(5000);
-      Serial.printf("DRV PWM active: rawDuty=%.1f count=%lu IN1=%lu IN2=%lu nSLEEP=%d nFAULT=%d\n",
-                    rawDutyPercent, static_cast<unsigned long>(hwCount),
-                    static_cast<unsigned long>(rawDutyPercent > 0.01f ? hwCount : 0),
-                    static_cast<unsigned long>(rawDutyPercent < -0.01f ? hwCount : 0),
-                    digitalRead(PIN_DRV_SLEEP), digitalRead(PIN_DRV_FAULT));
-      portENTER_CRITICAL(&m_guardMux);
-      GPIO.status_w1tc = uint32_t{1} << PIN_DRV_FAULT;
-      m_driverFaultPending = false;
-      m_monitorDriverFault = true;
-      portEXIT_CRITICAL(&m_guardMux);
-    }
-  } else if (!m_monitorDriverFault) {
-    portENTER_CRITICAL(&m_guardMux);
-    GPIO.status_w1tc = uint32_t{1} << PIN_DRV_FAULT;
-    m_driverFaultPending = false;
-    m_monitorDriverFault = true;
-    portEXIT_CRITICAL(&m_guardMux);
-  }
 #else
   if (rawDutyPercent > 0.0f) {
     ledcWrite(LEDC_CHANNEL_IN2, 0);
@@ -708,13 +688,6 @@ void ThermalController::writeRawHBridge(float rawDutyPercent) {
   } else {
     ledcWrite(LEDC_CHANNEL_IN1, 0);
     ledcWrite(LEDC_CHANNEL_IN2, 0);
-  }
-  if (!m_monitorDriverFault) {
-    portENTER_CRITICAL(&m_guardMux);
-    GPIO.status_w1tc = uint32_t{1} << PIN_DRV_FAULT;
-    m_driverFaultPending = false;
-    m_monitorDriverFault = true;
-    portEXIT_CRITICAL(&m_guardMux);
   }
 #endif
 #else
@@ -790,18 +763,8 @@ void ThermalController::disableDriver() {
 
   const bool wasActive = m_status.driverAwake || m_lastDirection != 0 || m_outputWatchdogArmed;
 
-#if defined(ESP_PLATFORM)
-  if (m_outputStarted) {
-    // 1. Immediately zero PWM output while nSLEEP is still HIGH.
-    // IN1=IN2=0 selects coast, not low-side brake, on DRV8701P.
-    ledcWrite(LEDC_CHANNEL_IN1, 0);
-    ledcWrite(LEDC_CHANNEL_IN2, 0);
-    // Freewheel current to ground for 2000us (2 full 1kHz PWM cycles) so the PWM cycle
-    // finishes and inductive current completely decays, eliminating back-EMF kickback into 5V_TEC
-    esp_rom_delay_us(2000);
-  }
-#endif
-
+  // Cut the driver before touching LEDC. Shutdown cannot depend on a
+  // peripheral call completing, or assume a fixed current-decay time.
   portENTER_CRITICAL(&m_guardMux);
   m_outputWatchdogArmed = false;
   digitalWrite(PIN_DRV_SLEEP, LOW);
@@ -845,18 +808,11 @@ void ThermalController::pollDriverFault(bool advanceCalibration) {
     m_status.driverAwake = false;
   }
   portENTER_CRITICAL(&m_guardMux);
-#if defined(ESP_PLATFORM)
-  if (m_monitorDriverFault && digitalRead(PIN_DRV_FAULT) == HIGH && digitalRead(PIN_DRV_SLEEP) == HIGH) {
-    m_driverFaultPending = false;
-    GPIO.status_w1tc = uint32_t{1} << PIN_DRV_FAULT;
-  }
-  const bool driverFault = m_driverFaultPending ||
-      (m_monitorDriverFault && digitalRead(PIN_DRV_FAULT) == LOW && digitalRead(PIN_DRV_SLEEP) == HIGH);
-#else
+  // A recovered pin is not evidence that no fault occurred. Preserve both
+  // the ISR latch and an edge queued while the interrupt was masked.
   const bool driverFault = m_driverFaultPending ||
       (m_monitorDriverFault && (digitalRead(PIN_DRV_FAULT) == LOW ||
                                 (GPIO.status & (uint32_t{1} << PIN_DRV_FAULT)) != 0));
-#endif
   const bool timedOut = m_sensorTimeoutPending;
   portEXIT_CRITICAL(&m_guardMux);
 #else
@@ -944,31 +900,13 @@ void ThermalController::checkSampleAgeFromTimer(uint32_t millisNow) {
     m_calPulseExpired = true;
     cut = true;
   }
+  // Publish the latch and cut nSLEEP in the same critical section. The
+  // other core cannot accept a fresh sample between these two operations.
+  // Do not call LEDC or delay from the independent watchdog.
+  if (cut && !m_manualWakeHold) GPIO.out_w1tc = uint32_t{1} << PIN_DRV_SLEEP;
 #if defined(ARDUINO) && defined(ESP32)
   portEXIT_CRITICAL(&m_guardMux);
 #endif
-
-  if (cut) {
-#if defined(ESP_PLATFORM)
-    if (!m_manualWakeHold) {
-      // 1. Immediately zero PWM output while nSLEEP is still HIGH.
-      // IN1=IN2=0 selects coast; current decay depends on the physical circuit.
-      ledcWrite(LEDC_CHANNEL_IN1, 0);
-      ledcWrite(LEDC_CHANNEL_IN2, 0);
-      // Freewheel current to ground for 2000us so current dissipates before gate drive drops
-      esp_rom_delay_us(2000);
-      portENTER_CRITICAL(&m_guardMux);
-      if (!m_manualWakeHold) {
-        GPIO.out_w1tc = uint32_t{1} << PIN_DRV_SLEEP;
-      }
-      portEXIT_CRITICAL(&m_guardMux);
-    }
-#else
-    if (!m_manualWakeHold) {
-      GPIO.out_w1tc = uint32_t{1} << PIN_DRV_SLEEP;
-    }
-#endif
-  }
 }
 
 bool ThermalController::setTecDirection(TecDirection direction) {
@@ -1302,36 +1240,12 @@ void IRAM_ATTR ThermalController::onDriverFault(void* argument) {
   auto* controller = static_cast<ThermalController*>(argument);
   portENTER_CRITICAL_ISR(&controller->m_guardMux);
   if (controller->m_monitorDriverFault) {
-#if defined(ESP_PLATFORM)
-    // On physical DRV8701 hardware: if the driver is asleep (nSLEEP == LOW),
-    // nFAULT is naturally pulled LOW as part of sleep mode. It is NOT a fault!
-    if (digitalRead(PIN_DRV_SLEEP) == LOW) {
-      GPIO.status_w1tc = uint32_t{1} << PIN_DRV_FAULT;
-      portEXIT_CRITICAL_ISR(&controller->m_guardMux);
-      return;
-    }
-    // On physical DRV8701 hardware, a real fault holds nFAULT LOW for >=1.6ms (1600us).
-    // Inductive switching glitches last <1-5us.
-    // Filter out sub-15us glitches before latching a catastrophic driver fault.
-    if (digitalRead(PIN_DRV_FAULT) == LOW) {
-      esp_rom_delay_us(15);
-      if (digitalRead(PIN_DRV_FAULT) == LOW) {
-        controller->m_driverFaultPending = true;
-        if (!controller->m_manualWakeHold) {
-          GPIO.out_w1tc = uint32_t{1} << PIN_DRV_SLEEP;
-        }
-      } else {
-        GPIO.status_w1tc = uint32_t{1} << PIN_DRV_FAULT;
-      }
-    } else {
-      GPIO.status_w1tc = uint32_t{1} << PIN_DRV_FAULT;
-    }
-#else
+    // The GPIO service already captured the falling edge. Its duration and
+    // the level at delayed ISR delivery cannot prove it was harmless.
     controller->m_driverFaultPending = true;
     if (!controller->m_manualWakeHold) {
       GPIO.out_w1tc = uint32_t{1} << PIN_DRV_SLEEP;
     }
-#endif
   }
   portEXIT_CRITICAL_ISR(&controller->m_guardMux);
 }

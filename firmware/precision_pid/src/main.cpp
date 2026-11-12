@@ -572,16 +572,15 @@ void handlePidSettings() {
   sendJson("{\"ok\":true}");
 }
 
-void handleDirectionCalibration() {
-  if (!writeRequestAllowed()) return;
-  if (!RequestSecurity::exact(server.arg("confirm"), "full_power")) {
-    sendJson("{\"ok\":false,\"error\":\"请确认散热器、探头安装及双向全功率测试\"}", 400);
-    return;
-  }
+struct ControlCommandResult {
+  int status;
+  const char* error;
+};
+
+ControlCommandResult beginDirectionCalibration() {
   if (wifiScanState == WifiScanState::Scanning || staConnectRequested() ||
       !controller.canStartDirectionCalibration()) {
-    sendJson("{\"ok\":false,\"error\":\"请先停用 TEC，保持温度 15~45°C、传感器正常且无故障，并等待配网完成\"}", 409);
-    return;
+    return {409, "请先停用 TEC，保持温度 15~45°C、传感器正常且无故障，并等待配网完成"};
   }
   // Invalidate the previous wiring result durably before the first test pulse.
   const bool invalidated = configStore.saveDirection(TecDirection::Unknown);
@@ -590,23 +589,58 @@ void handleDirectionCalibration() {
   calibrationResultHandled = true;
   if (!invalidated) {
     directionError = "旧方向清除失败，检测未启动；重启可能恢复旧记录，请先重试检测";
-    sendJson("{\"ok\":false,\"error\":\"旧方向清除失败，检测未启动\"}", 503);
-    return;
+    return {503, "旧方向清除失败，检测未启动"};
   }
   if (!runtimeInvalidated) {
     directionError = "运行状态已变化，检测未启动；请先停止并检查故障";
-    sendJson("{\"ok\":false,\"error\":\"无法清除运行中的方向，检测未启动\"}", 409);
-    return;
+    return {409, "无法清除运行中的方向，检测未启动"};
   }
   if (!controller.startDirectionCalibration()) {
     directionError = "检测未启动，请等待新的有效温度再重试";
-    sendJson("{\"ok\":false,\"error\":\"检测条件已变化，方向保持未确认，请重试\"}", 409);
-    return;
+    return {409, "检测条件已变化，方向保持未确认，请重试"};
   }
   directionError.clear();
   calibrationResultHandled = false;
+  return {200, nullptr};
+}
+
+void handleDirectionCalibration() {
+  if (!writeRequestAllowed()) return;
+  if (!RequestSecurity::exact(server.arg("confirm"), "full_power")) {
+    sendJson("{\"ok\":false,\"error\":\"请确认散热器、探头安装及双向全功率测试\"}", 400);
+    return;
+  }
+  const auto result = beginDirectionCalibration();
+  if (result.status != 200) {
+    sendJson("{\"ok\":false,\"error\":\"" + escapeJson(result.error) + "\"}", result.status);
+    return;
+  }
   sendJson("{\"ok\":true,\"started\":true}");
 }
+
+#if PL530_ENABLE_UNSAFE_DEBUG
+ControlCommandResult applyManualDirection(TecDirection direction) {
+  controller.pollDriverFault(false);
+  if (controller.settings().enabled || controller.manualWakeHold() ||
+      controller.status().driverAwake || controller.directionCalibrationStatus().active ||
+      latchedState(controller.status().state)) {
+    return {409, "请先停止输出、退出强制唤醒并检查故障"};
+  }
+  if (!configStore.saveDirection(direction)) {
+    controller.setTecDirection(TecDirection::Unknown);
+    directionSaved = false;
+    directionError = "手动方向保存失败，重启可能恢复旧记录";
+    return {503, "方向保存失败，运行方向保持未知"};
+  }
+  directionSaved = direction != TecDirection::Unknown;
+  if (!controller.setTecDirection(direction)) {
+    directionError = "方向已保存但运行应用失败，请检查后重新确认";
+    return {409, "运行状态已变化，方向未应用"};
+  }
+  directionError.clear();
+  return {200, nullptr};
+}
+#endif
 
 void serviceDirectionCalibration() {
   const auto result = controller.directionCalibrationStatus();
@@ -870,33 +904,21 @@ void setupRoutes() {
       sendJson("{\"ok\":false,\"error\":\"方向参数无效\"}", 400);
       return;
     }
-    controller.pollDriverFault(false);
-    if (controller.settings().enabled || controller.manualWakeHold() ||
-        controller.status().driverAwake || controller.directionCalibrationStatus().active ||
-        latchedState(controller.status().state)) {
-      sendJson("{\"ok\":false,\"error\":\"请先停止输出、退出强制唤醒并检查故障\"}", 409);
+    const auto result = applyManualDirection(d);
+    if (result.status != 200) {
+      sendJson("{\"ok\":false,\"error\":\"" + escapeJson(result.error) + "\"}", result.status);
       return;
     }
-    if (!configStore.saveDirection(d)) {
-      controller.setTecDirection(TecDirection::Unknown);
-      directionSaved = false;
-      directionError = "手动方向保存失败，重启可能恢复旧记录";
-      sendJson("{\"ok\":false,\"error\":\"方向保存失败，运行方向保持未知\"}", 503);
-      return;
-    }
-    directionSaved = (d != TecDirection::Unknown);
-    if (!controller.setTecDirection(d)) {
-      directionError = "方向已保存但运行应用失败，请检查后重新确认";
-      sendJson("{\"ok\":false,\"error\":\"运行状态已变化，方向未应用\"}", 409);
-      return;
-    }
-    directionError.clear();
     sendJson("{\"ok\":true,\"direction\":\"" + String(tecDirectionKey(d)) + "\"}");
   });
   server.on("/api/debug/wake", HTTP_GET, []() {
     if (!writeRequestAllowed()) return;
     const String state = server.arg("state");
-    const bool wake = (state == "1");
+    if (!RequestSecurity::exact(state, "0") && !RequestSecurity::exact(state, "1")) {
+      sendJson("{\"ok\":false,\"error\":\"state 必须为 0 或 1\"}", 400);
+      return;
+    }
+    const bool wake = RequestSecurity::exact(state, "1");
     controller.setManualWakeHold(wake);
     const int sleepLevel = digitalRead(PIN_DRV_SLEEP);
     const int faultLevel = digitalRead(PIN_DRV_FAULT);
@@ -906,8 +928,17 @@ void setupRoutes() {
 
   server.on("/api/debug/pwm", HTTP_GET, []() {
     if (!writeRequestAllowed()) return;
-    const int in1 = server.hasArg("in1") ? server.arg("in1").toInt() : 0;
-    const int in2 = server.hasArg("in2") ? server.arg("in2").toInt() : 0;
+    const String in1Value = server.arg("in1");
+    const String in2Value = server.arg("in2");
+    uint32_t in1 = 0, in2 = 0;
+    if ((!server.hasArg("in1") && !server.hasArg("in2")) ||
+        (server.hasArg("in1") && !RequestValidation::unsignedInteger(
+            in1Value.c_str(), in1Value.length(), TEC_PWM_MAX_COUNT, in1)) ||
+        (server.hasArg("in2") && !RequestValidation::unsignedInteger(
+            in2Value.c_str(), in2Value.length(), TEC_PWM_MAX_COUNT, in2))) {
+      sendJson("{\"ok\":false,\"error\":\"PWM 计数必须为范围内的非负整数\"}", 400);
+      return;
+    }
     if (!controller.manualWakeHold()) {
       controller.setManualWakeHold(true);
     }
@@ -1209,23 +1240,13 @@ void loop() {
       controller.setManualWakeHold(true);
       controller.setDebugPwm(0, TEC_PWM_MAX_COUNT); // 100% raw reverse PWM.
       Serial.println("[SERIAL] 100% Reverse PWM set (Pure DC 3.3V on TEC)!");
-    } else if (c == 'r' || c == 'R') {
-      controller.resetFault();
-      controller.setTecDirection(TecDirection::Reversed);
-      configStore.saveDirection(TecDirection::Reversed);
-      directionSaved = true;
-      Serial.println("[SERIAL] TEC Direction set to REVERSED (Cooling via Reverse PWM) and saved to NVS!");
-    } else if (c == 'n' || c == 'N') {
-      controller.resetFault();
-      controller.setTecDirection(TecDirection::Normal);
-      configStore.saveDirection(TecDirection::Normal);
-      directionSaved = true;
-      Serial.println("[SERIAL] TEC Direction set to NORMAL (Cooling via Forward PWM) and saved to NVS!");
-    } else if (c == 'u' || c == 'U') {
-      controller.setTecDirection(TecDirection::Unknown);
-      configStore.saveDirection(TecDirection::Unknown);
-      directionSaved = false;
-      Serial.println("[SERIAL] TEC Direction reset to UNKNOWN!");
+    } else if (c == 'r' || c == 'R' || c == 'n' || c == 'N' || c == 'u' || c == 'U') {
+      const TecDirection direction = (c == 'r' || c == 'R') ? TecDirection::Reversed
+          : (c == 'n' || c == 'N') ? TecDirection::Normal : TecDirection::Unknown;
+      const auto result = applyManualDirection(direction);
+      Serial.printf("[SERIAL] Direction %s: %s%s%s\n", tecDirectionKey(direction),
+                    result.status == 200 ? "SAVED" : "REJECTED",
+                    result.error ? ": " : "", result.error ? result.error : "");
     } else if (c == 'c' || c == 'C') {
       controller.resetFault();
       Serial.printf("[SERIAL] Fault reset requested. Current state: %s, nFAULT=%d\n",
@@ -1233,11 +1254,11 @@ void loop() {
     } else if (c == 'd' || c == 'D') {
       Serial.println("[SERIAL] Triggering Direction Calibration...");
       controller.setManualWakeHold(false);
-      controller.resetFault();
-      const bool started = controller.startDirectionCalibration();
-      Serial.printf("[SERIAL] startDirectionCalibration result: %s (state: %s)\n",
-                    started ? "SUCCESS" : "REJECTED",
-                    controllerStateName(controller.status().state));
+      const auto result = beginDirectionCalibration();
+      Serial.printf("[SERIAL] startDirectionCalibration result: %s (state: %s)%s%s\n",
+                    result.status == 200 ? "SUCCESS" : "REJECTED",
+                    controllerStateName(controller.status().state),
+                    result.error ? ": " : "", result.error ? result.error : "");
     } else if (c == '?' || c == 'h' || c == 'H') {
       Serial.println("\n=== PL530 SERIAL DEBUG COMMANDS ===");
       Serial.println("  w: Hold DRV8701 nSLEEP HIGH (Wake Hold ON)");

@@ -3,10 +3,24 @@
 #include <cerrno>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 
 namespace RequestValidation {
+inline bool unsignedInteger(const char* text, size_t length, uint32_t maximum, uint32_t& value) {
+  if (!text || length == 0 || length > 10 || std::strlen(text) != length) return false;
+  uint32_t parsed = 0;
+  for (size_t i = 0; i < length; ++i) {
+    if (text[i] < '0' || text[i] > '9') return false;
+    const uint32_t digit = static_cast<uint32_t>(text[i] - '0');
+    if (digit > maximum || parsed > (maximum - digit) / 10u) return false;
+    parsed = parsed * 10u + digit;
+  }
+  value = parsed;
+  return true;
+}
+
 inline bool decimal(const char* text, size_t length, float& value) {
   if (!text || length == 0 || length > 24 || std::strlen(text) != length) return false;
   size_t i = 0;
